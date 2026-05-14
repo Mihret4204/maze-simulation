@@ -1,0 +1,9 @@
+# Maze Generator and Solver
+
+## Features
+- Random maze generation
+- Dynamic maze visualization
+- Automatic maze solving
+- Backtracking visualization
+- Optional cycle generation
+
