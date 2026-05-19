@@ -1,11 +1,11 @@
 import random
-import maze
+from maze import Maze
+from visualizer import Visualizer
 
 class MazeSolver:
-    def __init__(self, maze, visualizer=None, delay=0.05):
+    def __init__(self, maze, visualizer=None, ):
         self.maze = maze
         self.visualizer = visualizer
-        self.delay = delay
 
         self.stack = []
         self.visited = set()
@@ -59,4 +59,11 @@ class MazeSolver:
         return False
     
     def draw_state(self):
-        pass
+        if self.visualizer:
+            self.visualizer.draw_state(
+                current=self.current,
+                path=self.path,
+                dead_ends=self.dead_ends
+            )
+
+            self.visualizer.handle_events()
