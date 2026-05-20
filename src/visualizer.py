@@ -1,9 +1,9 @@
 import pygame
+import sys
 import time
 
 class Visualizer:
     def __init__(self, maze, cell_size=25):
-        pygame.init()
 
         self.maze = maze
         self.cell_size = cell_size
@@ -93,13 +93,13 @@ class Visualizer:
                     )
 
         # 4. Update display
-        pygame.display.update()
+        pygame.display.flip()
 
         # 5. Control animation speed
-        time.sleep(0.03)
+        pygame.time.delay(30)
 
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                exit()
+                sys.exit()
