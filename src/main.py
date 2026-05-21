@@ -60,3 +60,43 @@ def is_connected(maze: Maze, start: tuple[int, int], end: tuple[int, int]) -> bo
                 visited.add(neighbor)
                 stack.append(neighbor)
     return False
+
+
+def handle_pygame_events() -> None:
+    """Handles window close events to prevent the window from freezing."""
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+
+def draw_maze(screen: pygame.Surface, maze: Maze, cell_size: int, current: tuple[int, int] | None = None, path: list[tuple[int, int]] | None = None) -> None:
+    """Renders the maze grid, walls, and optional paths using native Pygame drawing primitives."""
+    screen.fill((255, 255, 255))  # White background
+
+    # 1. Draw paths or exploration states if provided
+    if path:
+        for r, c in path:
+            rect = pygame.Rect(c * cell_size, r * cell_size, cell_size, cell_size)
+            pygame.draw.rect(screen, (200, 230, 255), rect)  # Light blue for path
+
+    if current:
+        rect = pygame.Rect(current[1] * cell_size, current[0] * cell_size, cell_size, cell_size)
+        pygame.draw.rect(screen, (255, 100, 100), rect)  # Light red for current head
+
+    # 2. Draw walls (Outer boundaries and inner cell walls)
+    for r in range(maze.rows):
+        for c in range(maze.cols):
+            x1, y1 = c * cell_size, r * cell_size
+            x2, y2 = x1 + cell_size, y1 + cell_size
+
+            if maze.has_east_wall(r, c):
+                pygame.draw.line(screen, (0, 0, 0), (x2, y1), (x2, y2), 2)
+            if maze.has_south_wall(r, c):
+                pygame.draw.line(screen, (0, 0, 0), (x1, y2), (x2, y2), 2)
+
+    # Draw top and left outer borders
+    pygame.draw.line(screen, (0, 0, 0), (0, 0), (maze.cols * cell_size, 0), 2)
+    pygame.draw.line(screen, (0, 0, 0), (0, 0), (0, maze.rows * cell_size), 2)
+
+    pygame.display.flip()
