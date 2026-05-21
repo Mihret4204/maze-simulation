@@ -6,34 +6,10 @@ import pygame
 from maze import Maze
 from generator import generate_maze
 from solver import MazeSolver
+from visualizer import Visualizer
 
-
-def choose_random_edge_cell(maze: Maze, edge: str) -> tuple[int, int]:
-    if edge == "left":
-        return (random.randrange(maze.rows), 0)
-    if edge == "right":
-        return (random.randrange(maze.rows), maze.cols - 1)
-    if edge == "top":
-        return (0, random.randrange(maze.cols))
-    if edge == "bottom":
-        return (maze.rows - 1, random.randrange(maze.cols))
-    raise ValueError(f"Unknown edge: {edge}")
-
-
-def choose_start_end(maze: Maze, start_edge: str, end_edge: str, allow_interior: bool) -> tuple[tuple[int, int], tuple[int, int]]:
-    if allow_interior:
-        start = (random.randrange(maze.rows), random.randrange(maze.cols))
-        end = (random.randrange(maze.rows), random.randrange(maze.cols))
-        while end == start:
-            end = (random.randrange(maze.rows), random.randrange(maze.cols))
-        return start, end
-
-    start = choose_random_edge_cell(maze, start_edge)
-    end = choose_random_edge_cell(maze, end_edge)
-    while end == start:
-        end = choose_random_edge_cell(maze, end_edge)
-    return start, end
-
+def choose_random_cell(maze: Maze) -> tuple[int, int]:
+    return (random.randrange(maze.rows), random.randrange(maze.cols))
 
 def add_random_cycles(maze: Maze, probability: float) -> int:
     removed = 0
@@ -46,7 +22,6 @@ def add_random_cycles(maze: Maze, probability: float) -> int:
                 maze.remove_south_wall(r, c)
                 removed += 1
     return removed
-
 
 def is_connected(maze: Maze, start: tuple[int, int], end: tuple[int, int]) -> bool:
     stack = [start]
@@ -61,118 +36,77 @@ def is_connected(maze: Maze, start: tuple[int, int], end: tuple[int, int]) -> bo
                 stack.append(neighbor)
     return False
 
-
 def handle_pygame_events() -> None:
-    """Handles window close events to prevent the window from freezing."""
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
 
-
-def draw_maze(screen: pygame.Surface, maze: Maze, cell_size: int, current: tuple[int, int] | None = None, path: list[tuple[int, int]] | None = None) -> None:
-    """Renders the maze grid, walls, and optional paths using native Pygame drawing primitives."""
-    screen.fill((255, 255, 255))  # White background
-
-    # 1. Draw paths or exploration states if provided
-    if path:
-        for r, c in path:
-            rect = pygame.Rect(c * cell_size, r * cell_size, cell_size, cell_size)
-            pygame.draw.rect(screen, (200, 230, 255), rect)  # Light blue for path
-
-    if current:
-        rect = pygame.Rect(current[1] * cell_size, current[0] * cell_size, cell_size, cell_size)
-        pygame.draw.rect(screen, (255, 100, 100), rect)  # Light red for current head
-
-    # 2. Draw walls (Outer boundaries and inner cell walls)
-    for r in range(maze.rows):
-        for c in range(maze.cols):
-            x1, y1 = c * cell_size, r * cell_size
-            x2, y2 = x1 + cell_size, y1 + cell_size
-
-            if maze.has_east_wall(r, c):
-                pygame.draw.line(screen, (0, 0, 0), (x2, y1), (x2, y2), 2)
-            if maze.has_south_wall(r, c):
-                pygame.draw.line(screen, (0, 0, 0), (x1, y2), (x2, y2), 2)
-
-    # Draw top and left outer borders
-    pygame.draw.line(screen, (0, 0, 0), (0, 0), (maze.cols * cell_size, 0), 2)
-    pygame.draw.line(screen, (0, 0, 0), (0, 0), (0, maze.rows * cell_size), 2)
-
-    pygame.display.flip()
-
-    
-def create_generation_callback(screen: pygame.Surface, cell_size: int, delay: float):
-    visited = set()
-
-    def on_step(maze: Maze, current: tuple[int, int], stage: str) -> None:
-        visited.add(current)
-        handle_pygame_events()
-        draw_maze(screen, maze, cell_size, current=current, path=list(visited))
-        if delay > 0:
-            pygame.time.wait(int(delay * 1000))
-
-    return on_step
-
-
-def run(rows: int, cols: int, cell_size: int, cycle_rate: float, animate_generation: bool, animate_solver: bool, delay: float, start_edge: str, end_edge: str, allow_interior: bool, seed: int | None) -> None:
+def run(rows: int, cols: int, cell_size: int, cycle_rate: float, animate_generation: bool, animate_solver: bool, delay: float, seed: int | None) -> None:
     if seed is not None:
         random.seed(seed)
 
-    # Initialize standard pygame modules
     pygame.init()
-    window_width = cols * cell_size
-    window_height = rows * cell_size
-    screen = pygame.display.set_mode((window_width, window_height))
-    pygame.display.set_caption("Maze Generator and Solver")
-
+    
     maze = Maze(rows, cols)
+    viz = Visualizer(maze, cell_size)
 
-    callback = None
-    if animate_generation:
-        callback = create_generation_callback(screen, cell_size, delay)
+    def gen_callback(m: Maze, current: tuple[int, int], stage: str) -> None:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        viz.screen.fill((255, 255, 255))
+        for i in range(m.rows):
+            for j in range(m.cols):
+                x = j * cell_size
+                y = i * cell_size
+                if m.has_north_wall(i, j):
+                    pygame.draw.line(viz.screen, (0, 0, 0), (x, y), (x + cell_size, y), 2)
+                if m.has_east_wall(i, j):
+                    pygame.draw.line(viz.screen, (0, 0, 0), (x + cell_size, y), (x + cell_size, y + cell_size), 2)
+                if m.has_south_wall(i, j):
+                    pygame.draw.line(viz.screen, (0, 0, 0), (x, y + cell_size), (x + cell_size, y + cell_size), 2)
+                if m.has_west_wall(i, j):
+                    pygame.draw.line(viz.screen, (0, 0, 0), (x, y), (x, y + cell_size), 2)
+        pygame.draw.rect(viz.screen, (255, 0, 0), (current[1] * cell_size, current[0] * cell_size, cell_size, cell_size))
+        pygame.display.flip()
+        if delay > 0:
+            pygame.time.wait(int(delay * 1000))
 
+    callback = gen_callback if animate_generation else None
     generate_maze(maze, on_step=callback, delay=delay)
 
     if cycle_rate > 0:
-        removed = add_random_cycles(maze, cycle_rate)
-        print(f"Added {removed} extra wall removals to introduce cycles.")
+        add_random_cycles(maze, cycle_rate)
 
-    start, end = choose_start_end(maze, start_edge, end_edge, allow_interior)
-    print(f"Start cell: {start}")
-    print(f"End cell: {end}")
+    start = choose_random_cell(maze)
+    end = choose_random_cell(maze)
+    while end == start:
+        end = choose_random_cell(maze)
 
     if not is_connected(maze, start, end):
-        print("Warning: generated maze is not connected for these start/end positions. Regenerating...", file=sys.stderr)
         pygame.quit()
-        raise RuntimeError("Maze generation failed solvability validation.")
-    solver = MazeSolver(maze, visualizer=None)
+        raise RuntimeError("Positions are invalid.")
+
+    solver = MazeSolver(maze, visualizer=viz)
     solver.solve(start, end)
 
-    print("Maze generation and solver run complete.")
-    print("Close the pygame window to exit.")
-
-    # Final static render loop
     while True:
-        handle_pygame_events()
-        draw_maze(screen, maze, cell_size, current=end, path=solver.path)
-
+        viz.handle_events()
+        viz.draw_state(current=end, path=solver.path, dead_ends=solver.dead_ends, start_cell=start, end_cell=end)
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Maze generator and solver")
-    parser.add_argument("--rows", type=int, default=20, help="Number of maze rows")
-    parser.add_argument("--cols", type=int, default=30, help="Number of maze columns")
-    parser.add_argument("--cell-size", type=int, default=24, help="Size of each maze cell in pixels")
-    parser.add_argument("--cycle-rate", type=float, default=0.05, help="Probability of removing an extra wall per edge to create cycles")
-    parser.add_argument("--animate-generation", action="store_true", help="Animate maze generation")
-    parser.add_argument("--animate-solver", action="store_true", help="Animate maze solving")
-    parser.add_argument("--delay", type=float, default=0.02, help="Delay between animation steps in seconds")
-    parser.add_argument("--start-edge", choices=["left", "right", "top", "bottom"], default="left", help="Edge used for the start cell")
-    parser.add_argument("--end-edge", choices=["left", "right", "top", "bottom"], default="right", help="Edge used for the end cell")
-    parser.add_argument("--allow-interior", action="store_true", help="Allow start and end cells to be placed anywhere inside the maze")
-    parser.add_argument("--seed", type=int, help="Random seed for repeatable maze generation")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--rows", type=int, default=20)
+    parser.add_argument("--cols", type=int, default=30)
+    parser.add_argument("--cell-size", type=int, default=24)
+    parser.add_argument("--cycle-rate", type=float, default=0.05)
+    parser.add_argument("--animate-generation", action="store_true")
+    parser.add_argument("--animate-solver", action="store_true")
+    parser.add_argument("--delay", type=float, default=0.02)
+    parser.add_argument("--seed", type=int)
     return parser.parse_args()
-
 
 if __name__ == "__main__":
     args = parse_args()
@@ -184,8 +118,5 @@ if __name__ == "__main__":
         animate_generation=args.animate_generation,
         animate_solver=args.animate_solver,
         delay=args.delay,
-        start_edge=args.start_edge,
-        end_edge=args.end_edge,
-        allow_interior=args.allow_interior,
         seed=args.seed,
     )
