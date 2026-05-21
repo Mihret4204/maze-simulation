@@ -11,6 +11,17 @@ from visualizer import Visualizer
 def choose_random_cell(maze: Maze) -> tuple[int, int]:
     return (random.randrange(maze.rows), random.randrange(maze.cols))
 
+def choose_random_edge_cell(maze: Maze, edge: str) -> tuple[int, int]:
+    if edge == "left":
+        return (random.randrange(maze.rows), 0)
+    if edge == "right":
+        return (random.randrange(maze.rows), maze.cols - 1)
+    if edge == "top":
+        return (0, random.randrange(maze.cols))
+    if edge == "bottom":
+        return (maze.rows - 1, random.randrange(maze.cols))
+    raise ValueError(f"Unknown edge: {edge}")
+
 def add_random_cycles(maze: Maze, probability: float) -> int:
     removed = 0
     for r in range(maze.rows):
@@ -69,8 +80,10 @@ def run(rows: int, cols: int, cell_size: int, cycle_rate: float, animate_generat
                     pygame.draw.line(viz.screen, (0, 0, 0), (x, y + cell_size), (x + cell_size, y + cell_size), 2)
                 if m.has_west_wall(i, j):
                     pygame.draw.line(viz.screen, (0, 0, 0), (x, y), (x, y + cell_size), 2)
-        pygame.draw.rect(viz.screen, (255, 0, 0), (current[1] * cell_size, current[0] * cell_size, cell_size, cell_size))
+
+        viz.draw_rat(current)
         pygame.display.flip()
+
         if delay > 0:
             pygame.time.wait(int(delay * 1000))
 
@@ -80,10 +93,8 @@ def run(rows: int, cols: int, cell_size: int, cycle_rate: float, animate_generat
     if cycle_rate > 0:
         add_random_cycles(maze, cycle_rate)
 
-    start = choose_random_cell(maze)
-    end = choose_random_cell(maze)
-    while end == start:
-        end = choose_random_cell(maze)
+    start = choose_random_edge_cell(maze, "left")
+    end = choose_random_edge_cell(maze, "right")
 
     if not is_connected(maze, start, end):
         pygame.quit()

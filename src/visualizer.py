@@ -15,7 +15,23 @@ class Visualizer:
         
         if not pygame.font.get_init():
             pygame.font.init()
+
         self.font = pygame.font.SysFont("Arial", int(cell_size * 0.6), bold=True)
+        self.rat_font = pygame.font.SysFont("Segoe UI Emoji", int(cell_size * 0.8))
+
+    def draw_rat(self, cell):
+        if cell is None:
+            return
+
+        r, c = cell
+        x = c * self.cell_size
+        y = r * self.cell_size
+
+        rat_surf = self.rat_font.render("🐀", True, (0, 0, 0))
+        rat_rect = rat_surf.get_rect(
+            center=(x + self.cell_size // 2, y + self.cell_size // 2)
+        )
+        self.screen.blit(rat_surf, rat_rect)
 
     def draw_state(self, current, path, dead_ends, start_cell=None, end_cell=None):
         self.screen.fill((255, 255, 255))
@@ -49,9 +65,7 @@ class Visualizer:
                     self.screen.blit(text_surf, text_rect)
 
                 if cell == current:
-                    rat_surf = self.font.render("🐀", True, (0, 0, 0))
-                    rat_rect = rat_surf.get_rect(center=(x + self.cell_size // 2, y + self.cell_size // 2))
-                    self.screen.blit(rat_surf, rat_rect)
+                    self.draw_rat(cell)
 
         for i in range(self.rows):
             for j in range(self.cols):
