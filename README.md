@@ -6,6 +6,7 @@ A Python project that generates and solves rectangular mazes using randomized de
 ## Project Structure
 
 src/
+
 ├── maze.py          # Maze data structure (walls, neighbors, bounds)
 ├── generator.py     # Randomized DFS maze generation
 ├── solver.py        # DFS maze solver with backtracking
@@ -41,6 +42,7 @@ pip install pygame
 Run the maze with full generation + solving animation:
 
 cd src
+
 python main.py --animate-generation
 
 On Windows, if python does not work, try:
@@ -52,6 +54,7 @@ This starts with a full grid and shows the rat dynamically carving/removing wall
 Run without generation animation:
 
 cd src
+
 python main.py
 
 This skips the wall-carving animation and directly shows the generated maze being solved.
@@ -59,6 +62,7 @@ This skips the wall-carving animation and directly shows the generated maze bein
 Run the test to verify maze generation:
 
 cd src
+
 python test_generator.py
 
 ## Algorithms
