@@ -100,3 +100,59 @@ def draw_maze(screen: pygame.Surface, maze: Maze, cell_size: int, current: tuple
     pygame.draw.line(screen, (0, 0, 0), (0, 0), (0, maze.rows * cell_size), 2)
 
     pygame.display.flip()
+
+    
+def create_generation_callback(screen: pygame.Surface, cell_size: int, delay: float):
+    visited = set()
+
+    def on_step(maze: Maze, current: tuple[int, int], stage: str) -> None:
+        visited.add(current)
+        handle_pygame_events()
+        draw_maze(screen, maze, cell_size, current=current, path=list(visited))
+        if delay > 0:
+            pygame.time.wait(int(delay * 1000))
+
+    return on_step
+
+
+def run(rows: int, cols: int, cell_size: int, cycle_rate: float, animate_generation: bool, animate_solver: bool, delay: float, start_edge: str, end_edge: str, allow_interior: bool, seed: int | None) -> None:
+    if seed is not None:
+        random.seed(seed)
+
+    # Initialize standard pygame modules
+    pygame.init()
+    window_width = cols * cell_size
+    window_height = rows * cell_size
+    screen = pygame.display.set_mode((window_width, window_height))
+    pygame.display.set_caption("Maze Generator and Solver")
+
+    maze = Maze(rows, cols)
+
+    callback = None
+    if animate_generation:
+        callback = create_generation_callback(screen, cell_size, delay)
+
+    generate_maze(maze, on_step=callback, delay=delay)
+
+    if cycle_rate > 0:
+        removed = add_random_cycles(maze, cycle_rate)
+        print(f"Added {removed} extra wall removals to introduce cycles.")
+
+    start, end = choose_start_end(maze, start_edge, end_edge, allow_interior)
+    print(f"Start cell: {start}")
+    print(f"End cell: {end}")
+
+    if not is_connected(maze, start, end):
+        print("Warning: generated maze is not connected for these start/end positions. Regenerating...", file=sys.stderr)
+        pygame.quit()
+        raise RuntimeError("Maze generation failed solvability validation.")
+    solver = MazeSolver(maze, visualizer=None)
+    solver.solve(start, end)
+
+    print("Maze generation and solver run complete.")
+    print("Close the pygame window to exit.")
+
+    # Final static render loop
+    while True:
+        handle_pygame_events()
+        draw_maze(screen, maze, cell_size, current=end, path=solver.path)
