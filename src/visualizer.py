@@ -1,44 +1,53 @@
 import pygame
-import time
+import sys
 
 class Visualizer:
     def __init__(self, maze, cell_size=25):
-        pygame.init()
-
         self.maze = maze
         self.cell_size = cell_size
-
         self.rows = maze.rows
         self.cols = maze.cols
-
         self.width = self.cols * cell_size
         self.height = self.rows * cell_size
-
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Maze Solver Visualization")
-
         self.clock = pygame.time.Clock()
+        
+        if not pygame.font.get_init():
+            pygame.font.init()
 
-    def draw_state(self, current, path, dead_ends):
-        # 1. Clear screen
+        self.font = pygame.font.SysFont("Arial", int(cell_size * 0.6), bold=True)
+        self.rat_font = pygame.font.SysFont("Segoe UI Emoji", int(cell_size * 0.8))
+
+    def draw_rat(self, cell):
+        if cell is None:
+            return
+
+        r, c = cell
+        x = c * self.cell_size
+        y = r * self.cell_size
+
+        rat_surf = self.rat_font.render("🐀", True, (0, 0, 0))
+        rat_rect = rat_surf.get_rect(
+            center=(x + self.cell_size // 2, y + self.cell_size // 2)
+        )
+        self.screen.blit(rat_surf, rat_rect)
+
+    def draw_state(self, current, path, dead_ends, start_cell=None, end_cell=None):
         self.screen.fill((255, 255, 255))
 
-        # 2. Draw cells (colors)
         for i in range(self.rows):
             for j in range(self.cols):
                 x = j * self.cell_size
                 y = i * self.cell_size
-
                 cell = (i, j)
 
-                if cell == current:
-                    color = (255, 0, 0)  # RED
-                elif cell in dead_ends:
-                    color = (0, 0, 255)  # BLUE
+                if cell in dead_ends:
+                    color = (0, 0, 255)
                 elif cell in path:
-                    color = (0, 255, 0)  # GREEN
+                    color = (255, 182, 193)
                 else:
-                    color = (255, 255, 255)  # WHITE
+                    color = (255, 255, 255)
 
                 pygame.draw.rect(
                     self.screen,
@@ -46,60 +55,37 @@ class Visualizer:
                     (x, y, self.cell_size, self.cell_size)
                 )
 
-        # 3. Draw ALL walls using Maze methods
+                if cell == start_cell:
+                    text_surf = self.font.render("S", True, (0, 128, 0))
+                    text_rect = text_surf.get_rect(center=(x + self.cell_size // 2, y + self.cell_size // 2))
+                    self.screen.blit(text_surf, text_rect)
+                elif cell == end_cell:
+                    text_surf = self.font.render("E", True, (139, 0, 0))
+                    text_rect = text_surf.get_rect(center=(x + self.cell_size // 2, y + self.cell_size // 2))
+                    self.screen.blit(text_surf, text_rect)
+
+                if cell == current:
+                    self.draw_rat(cell)
+
         for i in range(self.rows):
             for j in range(self.cols):
                 x = j * self.cell_size
                 y = i * self.cell_size
 
-                # NORTH wall
                 if self.maze.has_north_wall(i, j):
-                    pygame.draw.line(
-                        self.screen,
-                        (0, 0, 0),
-                        (x, y),
-                        (x + self.cell_size, y),
-                        2
-                    )
-
-                # EAST wall
+                    pygame.draw.line(self.screen, (0, 0, 0), (x, y), (x + self.cell_size, y), 2)
                 if self.maze.has_east_wall(i, j):
-                    pygame.draw.line(
-                        self.screen,
-                        (0, 0, 0),
-                        (x + self.cell_size, y),
-                        (x + self.cell_size, y + self.cell_size),
-                        2
-                    )
-
-                # SOUTH wall
+                    pygame.draw.line(self.screen, (0, 0, 0), (x + self.cell_size, y), (x + self.cell_size, y + self.cell_size), 2)
                 if self.maze.has_south_wall(i, j):
-                    pygame.draw.line(
-                        self.screen,
-                        (0, 0, 0),
-                        (x, y + self.cell_size),
-                        (x + self.cell_size, y + self.cell_size),
-                        2
-                    )
-
-                # WEST wall
+                    pygame.draw.line(self.screen, (0, 0, 0), (x, y + self.cell_size), (x + self.cell_size, y + self.cell_size), 2)
                 if self.maze.has_west_wall(i, j):
-                    pygame.draw.line(
-                        self.screen,
-                        (0, 0, 0),
-                        (x, y),
-                        (x, y + self.cell_size),
-                        2
-                    )
+                    pygame.draw.line(self.screen, (0, 0, 0), (x, y), (x, y + self.cell_size), 2)
 
-        # 4. Update display
-        pygame.display.update()
-
-        # 5. Control animation speed
-        time.sleep(0.03)
+        pygame.display.flip()
+        pygame.time.delay(50)
 
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                exit()
+                sys.exit()
