@@ -3,33 +3,29 @@ from maze import Maze
 from visualizer import Visualizer
 
 class MazeSolver:
-    def __init__(self, maze, visualizer=None, ):
+    def __init__(self, maze, visualizer=None):
         self.maze = maze
         self.visualizer = visualizer
-
         self.stack = []
         self.visited = set()
         self.path = []
         self.dead_ends = set()
-
-        self.current = (0,0)
+        self.current = (0, 0)
         self.finished = False
+        self.start = None
+        self.end = None
 
-
-
-    def solve(self,start,end):
-        self.current = start
+    def solve(self, start, end):
+        self.start = start
         self.end = end
-
+        self.current = start
         self.stack.append(self.current)
         self.visited.add(self.current)
 
         while self.stack:
             self.current = self.stack[-1]
-
             self.path = list(self.stack)
 
-            # Draw animation
             self.draw_state()
 
             if self.current == end:
@@ -57,13 +53,14 @@ class MazeSolver:
 
         print("No solution found")
         return False
-    
+
     def draw_state(self):
         if self.visualizer:
             self.visualizer.draw_state(
                 current=self.current,
                 path=self.path,
-                dead_ends=self.dead_ends
+                dead_ends=self.dead_ends,
+                start_cell=self.start,
+                end_cell=self.end
             )
-
             self.visualizer.handle_events()
