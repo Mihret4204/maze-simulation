@@ -156,3 +156,36 @@ def run(rows: int, cols: int, cell_size: int, cycle_rate: float, animate_generat
     while True:
         handle_pygame_events()
         draw_maze(screen, maze, cell_size, current=end, path=solver.path)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Maze generator and solver")
+    parser.add_argument("--rows", type=int, default=20, help="Number of maze rows")
+    parser.add_argument("--cols", type=int, default=30, help="Number of maze columns")
+    parser.add_argument("--cell-size", type=int, default=24, help="Size of each maze cell in pixels")
+    parser.add_argument("--cycle-rate", type=float, default=0.05, help="Probability of removing an extra wall per edge to create cycles")
+    parser.add_argument("--animate-generation", action="store_true", help="Animate maze generation")
+    parser.add_argument("--animate-solver", action="store_true", help="Animate maze solving")
+    parser.add_argument("--delay", type=float, default=0.02, help="Delay between animation steps in seconds")
+    parser.add_argument("--start-edge", choices=["left", "right", "top", "bottom"], default="left", help="Edge used for the start cell")
+    parser.add_argument("--end-edge", choices=["left", "right", "top", "bottom"], default="right", help="Edge used for the end cell")
+    parser.add_argument("--allow-interior", action="store_true", help="Allow start and end cells to be placed anywhere inside the maze")
+    parser.add_argument("--seed", type=int, help="Random seed for repeatable maze generation")
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    run(
+        rows=args.rows,
+        cols=args.cols,
+        cell_size=args.cell_size,
+        cycle_rate=args.cycle_rate,
+        animate_generation=args.animate_generation,
+        animate_solver=args.animate_solver,
+        delay=args.delay,
+        start_edge=args.start_edge,
+        end_edge=args.end_edge,
+        allow_interior=args.allow_interior,
+        seed=args.seed,
+    )
