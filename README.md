@@ -8,10 +8,15 @@ A Python project that generates and solves rectangular mazes using randomized de
 src/
 
 ├── maze.py          # Maze data structure (walls, neighbors, bounds)
+
 ├── generator.py     # Randomized DFS maze generation
+
 ├── solver.py        # DFS maze solver with backtracking
+
 ├── visualizer.py    # pygame-based real-time visualization
+
 ├── main.py          # Entry point
+
 └── test_generator.py # Basic generation test
 
 ## How It Works
@@ -45,7 +50,9 @@ cd src
 
 python main.py --animate-generation
 
-On Windows, if python does not work, try:
+### On Windows, 
+
+ if python does not work, try:
 
 py main.py --animate-generation
 
